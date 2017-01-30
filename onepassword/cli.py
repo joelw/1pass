@@ -34,7 +34,7 @@ class CLI(object):
         )
 
         if item is not None:
-            self.stdout.write("%s\n" % item.password)
+            self.stdout.write("%s\n%s\n%s\n" % (item.name, item.username, item.password))
         else:
             self.stderr.write("1pass: Could not find an item named '%s'\n" % (
                 self.arguments.item,
