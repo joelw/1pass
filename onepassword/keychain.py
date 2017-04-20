@@ -1,3 +1,4 @@
+import sys, traceback
 import json
 import os
 from fuzzywuzzy import process
@@ -25,16 +26,23 @@ class Keychain(object):
         matching. ``fuzzy_threshold`` can be an integer between 0 and
         100, where 100 is an exact match.
         """
-        match = process.extractOne(
+        matches = process.extract(
             name,
             self._items.keys(),
-            score_cutoff=(fuzzy_threshold-1),
+            limit=5
+#            score_cutoff=(fuzzy_threshold-1),
         )
-        if match:
-            exact_name = match[0]
-            item = self._items[exact_name]
-            item.decrypt_with(self)
-            return item
+        items = []
+        if matches:
+            for match in matches:
+                exact_name = match[0]
+                item = self._items[exact_name]
+                try:
+                    item.decrypt_with(self)
+                    items.append(item)
+                except:
+                    traceback.print_exc(file=sys.stdout)
+            return items
         else:
             return None
 
@@ -115,7 +123,7 @@ class KeychainItem(object):
         )
         encrypted_json = self._lazily_load("_encrypted_json")
         decrypted_json = key.decrypt(self._encrypted_json)
-        self._data = json.loads(decrypted_json)
+        self._data = json.loads(decrypted_json.decode('utf-8', 'ignore').replace("\\/", "/").replace("\x10", "").rstrip())
         self.password = self._find_password()
         self.username = self._find_username()
 
@@ -155,7 +163,7 @@ class WebFormKeychainItem(KeychainItem):
 
 class PasswordKeychainItem(KeychainItem):
     def _find_password(self):
-        return self._data["password"]
+        return self._data.get("password", "")
 
     def _find_username(self):
-        return self._data["username"]
+        return self._data.get("username", "")

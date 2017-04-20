@@ -4,6 +4,7 @@ import os
 import sys
 
 from onepassword import Keychain
+from terminaltables import SingleTable
 
 DEFAULT_KEYCHAIN_PATH = "~/Dropbox/1Password.agilekeychain"
 
@@ -28,13 +29,19 @@ class CLI(object):
         """
         self._unlock_keychain()
 
-        item = self.keychain.item(
+        items = self.keychain.item(
             self.arguments.item,
             fuzzy_threshold=self._fuzzy_threshold(),
         )
 
-        if item is not None:
-            self.stdout.write("%s\n%s\n%s\n" % (item.name, item.username, item.password))
+        if items is not None:
+            table_data = []
+            table_data.append(['Name', 'Username', 'Password'])
+            for item in items:
+                table_data.append([item.name, item.username, item.password])
+#                self.stdout.write("%-30s\t%-20s\t%-20s\n" % (item.name, item.username, item.password))
+            print SingleTable(table_data).table
+            
         else:
             self.stderr.write("1pass: Could not find an item named '%s'\n" % (
                 self.arguments.item,
